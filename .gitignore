@@ -1,3 +1,4 @@
 *.o
 *.so
 SignalView.lv2/
+build/
