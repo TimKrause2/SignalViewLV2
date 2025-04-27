@@ -23,7 +23,7 @@ struct SignalViewURIs
      needs.  These are used as types and properties for plugin:UI
      communication, as well as for saving state. */
     LV2_URID RawAudio;
-    LV2_URID channelID;
+    LV2_URID nChannels;
     LV2_URID audioData;
     LV2_URID ui_On;
     LV2_URID ui_Off;
@@ -48,7 +48,7 @@ struct SignalViewURIs
            specifications. */
         RawAudio     = map->map(map->handle, SIGNAL_VIEW_URI "#RawAudio");
         audioData    = map->map(map->handle, SIGNAL_VIEW_URI "#audioData");
-        channelID    = map->map(map->handle, SIGNAL_VIEW_URI "#channelID");
+        nChannels    = map->map(map->handle, SIGNAL_VIEW_URI "#nChannels");
         ui_On        = map->map(map->handle, SIGNAL_VIEW_URI "#UIOn");
         ui_Off       = map->map(map->handle, SIGNAL_VIEW_URI "#UIOff");
         ui_SendState = map->map(map->handle, SIGNAL_VIEW_URI "#UISendState");

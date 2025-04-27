@@ -30,6 +30,8 @@ class SignalView
     LV2_Atom_Forge       forge;
     LV2_Atom_Forge_Frame seq_frame;
 
+    float vec_buffer[32000];
+
     double rate;
 
     // UI state
@@ -49,9 +51,9 @@ public:
 
     void connect_port(uint32_t port, void *data);
     void tx_rawaudio(
-        const int32_t channel,
         const size_t  n_samples,
-        const float*  data);
+        const float*  data0,
+        const float*  data1);
     void run(uint32_t n_samples);
     LV2_State_Status state_save(
         LV2_State_Store_Function  store,

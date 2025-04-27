@@ -19,6 +19,10 @@ SignalView::SignalView(
     ui_active = false;
     send_settings_to_ui = false;
     SignalView::rate = rate;
+    dB_min = -180.0f;
+    dB_max = 0.0f;
+    linFreq = rate/2.0f;
+    log = false;
 
     uris = new SignalViewURIs(map);
     lv2_atom_forge_init(&forge, map);
@@ -51,9 +55,9 @@ void SignalView::connect_port(uint32_t port, void *data)
 }
 
 void SignalView::tx_rawaudio(
-    const int32_t channel,
     const size_t  n_samples,
-    const float*  data)
+    const float*  data0,
+    const float*  data1)
 {
     LV2_Atom_Forge_Frame frame;
 
@@ -62,13 +66,21 @@ void SignalView::tx_rawaudio(
     lv2_atom_forge_object(&forge, &frame, 0, uris->RawAudio);
 
     // Add integer 'channelID' property
-    lv2_atom_forge_key(&forge, uris->channelID);
-    lv2_atom_forge_int(&forge, channel);
+    lv2_atom_forge_key(&forge, uris->nChannels);
+    lv2_atom_forge_int(&forge, 2);
+
+    float *dst = vec_buffer;
+    const float *src0 = data0;
+    const float *src1 = data1;
+    for(int i=0;i<n_samples;i++){
+        *(dst++) = *(src0++);
+        *(dst++) = *(src1++);
+    }
 
     // Add vector of floats 'audioData' property
     lv2_atom_forge_key(&forge, uris->audioData);
     lv2_atom_forge_vector(
-        &forge, sizeof(float), uris->atom_Float, n_samples, data);
+        &forge, sizeof(float), uris->atom_Float, n_samples*2, vec_buffer);
 
     // Close off object
     lv2_atom_forge_pop(&forge, &frame);
@@ -159,11 +171,11 @@ void SignalView::run(uint32_t n_samples)
     }
 
     // Process audio data
+    if (ui_active) {
+        // If UI is active, send raw audio data to UI
+        tx_rawaudio(n_samples, input[0], input[1]);
+    }
     for (uint32_t c = 0; c < 2; ++c) {
-        if (ui_active) {
-            // If UI is active, send raw audio data to UI
-            tx_rawaudio((int32_t)c, n_samples, input[c]);
-        }
         // If not processing audio in-place, forward audio
         if (input[c] != output[c]) {
             memcpy(output[c], input[c], sizeof(float) * n_samples);
@@ -295,7 +307,10 @@ state_save(LV2_Handle                instance,
            const LV2_Feature* const* features)
 {
     SignalView* m = (SignalView*) instance;
-    if(m) return m->state_save(store, handle, flags, features);
+    if(m) {
+        return m->state_save(store, handle, flags, features);
+    }
+    return LV2_STATE_SUCCESS;
 }
 
 static LV2_State_Status
@@ -306,7 +321,10 @@ state_restore(LV2_Handle                  instance,
               const LV2_Feature* const*   features)
 {
     SignalView* m = (SignalView*) instance;
-    if(m) return m->state_restore(retrieve, handle, flags, features);
+    if(m){
+        return m->state_restore(retrieve, handle, flags, features);
+    }
+    return LV2_STATE_SUCCESS;
 }
 
 static const void*
@@ -334,7 +352,7 @@ static const LV2_Descriptor descriptor =
 LV2_SYMBOL_EXPORT const LV2_Descriptor*
 lv2_descriptor(uint32_t index)
 {
-    if(indexx==0){
+    if(index==0){
         return &descriptor;
     } else {
         return nullptr;
