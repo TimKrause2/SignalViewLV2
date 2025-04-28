@@ -25,7 +25,7 @@ SignalView.so: SignalView.o
 
 SignalView.o: SignalView.cpp SignalView.h uris.h
 
-SignalViewUI.so: SignalViewUI.o Font.o Grid.o LGraph.o Shader.o Spectrum.o Waterfall.o
+SignalViewUI.so: SignalViewUI.o Font.o Grid.o LGraph.o Shader.o Spectrum.o Waterfall.o $(BUILDDIR)/libpugl.a
 	g++ -Wall -Wextra -shared -fPIC -o SignalViewUI.so SignalViewUI.o Font.o Grid.o LGraph.o Shader.o Spectrum.o Waterfall.o \
 	 -L$(BUILDDIR) -lpugl `pkg-config --libs x11 xext xcursor xrandr glx fftw3 freetype2`
 
@@ -39,6 +39,7 @@ SignalView.lv2: SignalViewUI.so SignalView.so
 	cp SignalView.ttl SignalView.lv2
 	cp "sui generis rg.otf" SignalView.lv2
 	cp -u -r SignalView.lv2 ~/.lv2
+	zip -r $(BUILDDIR)/SignalView.zip SignalView.lv2
 	rm -rf SignalView.lv2
 
 Font.o: Font.cpp
