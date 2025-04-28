@@ -40,7 +40,7 @@ the following commands to install the dependencies.
     sudo apt install libxrandr-dev
     sudo apt install libglx-dev
     sudo apt install libfreetype-dev
-    sudo apt isntall ligglm-dev
+    sudo apt install ligglm-dev
 
 ### Make and Install
 
