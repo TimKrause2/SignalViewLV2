@@ -22,6 +22,9 @@
 #include "pugl/gl.h"
 #include "pugl/pugl.h"
 
+#define BUTTON_LOG 1
+#define BUTTON_MOTION 0
+
 PuglStatus onEvent(PuglView* view, const PuglEvent* event);
 
 class SignalViewUI
@@ -47,8 +50,14 @@ class SignalViewUI
     PuglView*  view;
     int        width;
     int        height;
+    int        h1;
+    int        h2;
+    bool       mousing;
+    int        x_last;
+    int        y_last;
 
     std::unique_ptr<Spectrum> spectrum;
+    void setSpectrum(void);
 
     public:
     SignalViewUI(
@@ -67,6 +76,10 @@ class SignalViewUI
     void teardownGL(void);
     void onConfigure(int width, int height);
     void onExpose(void);
+    void onScroll(int y, int dy);
+    void onButtonPress(const PuglButtonEvent* e);
+    void onButtonRelease(const PuglButtonEvent* e);
+    void onMotion(const PuglMotionEvent* e);
 
     void send_ui_state(void);
     void send_ui_disable(void);

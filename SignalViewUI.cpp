@@ -36,6 +36,7 @@ SignalViewUI::SignalViewUI(
     dB_max = 0.0f;
     linFreq = rate/2.0f;
     log = false;
+    mousing = false;
 
     send_ui_send_state();
 
@@ -45,7 +46,8 @@ SignalViewUI::SignalViewUI(
 
 SignalViewUI::~SignalViewUI()
 {
-
+    puglFreeView(view);
+    puglFreeWorld(world);
 }
 
 void SignalViewUI::setupPugl(void* parent)
@@ -80,6 +82,15 @@ void SignalViewUI::setupPugl(void* parent)
     puglShow(view, PUGL_SHOW_RAISE);
 }
 
+void SignalViewUI::setSpectrum(void)
+{
+    if(spectrum){
+        spectrum->SetdBLimits(dB_min, dB_max);
+        spectrum->SetWidth(linFreq);
+        spectrum->SetFrequency(log);
+    }
+}
+
 void SignalViewUI::setupGL(void)
 {
     // load glad
@@ -92,6 +103,7 @@ void SignalViewUI::setupGL(void)
     // Create a new SignalViewGL
     spectrum.reset(new Spectrum((int)(rate/10.0f),rate,2,bundle_path));
     spectrum->GLInit();
+    setSpectrum();
 
     // enable data from the plugin
     send_ui_enable();
@@ -111,6 +123,8 @@ void SignalViewUI::onConfigure(int width, int height)
     glViewport(0, 0, width, height);
     SignalViewUI::width = width;
     SignalViewUI::height = height;
+    h1 = height/3;
+    h2 = height*2/3;
 }
 
 void SignalViewUI::onExpose(void)
@@ -119,6 +133,66 @@ void SignalViewUI::onExpose(void)
     // draw the SignalViewGL
     // printf("SignalViewUI::onExpose\n");
     if(spectrum) spectrum->Render();
+}
+
+void SignalViewUI::onScroll(int y, int dy)
+{
+    if(y>=h1 && y<=h2){
+        float delta = dy * 2;
+        float alpha = (float)(y-h1)/(float)(h2-h1);
+        float d_dB_min = delta*(1.0f - alpha);
+        float d_dB_max = -delta*alpha;
+        dB_min += d_dB_min;
+        dB_max += d_dB_max;
+        if(dB_min < -180.0f) dB_min = -180.0f;
+        if(dB_min > 0.0f) dB_min = 0.0f;
+        if(dB_max < -180.0f) dB_max = -180.0f;
+        if(dB_max > 0.0f) dB_max = 0.0f;
+        if(dB_max < dB_min){
+            float t = dB_min;
+            dB_min = dB_max;
+            dB_max = t;
+        }
+        if(spectrum) spectrum->SetdBLimits(dB_min, dB_max);
+        send_ui_state();
+    }
+}
+
+void SignalViewUI::onButtonPress(const PuglButtonEvent* e)
+{
+    int button = e->button;
+    if(button==BUTTON_LOG){
+        log = !log;
+        if(spectrum) spectrum->SetFrequency(log);
+        send_ui_state();
+    }else if(button==BUTTON_MOTION){
+        mousing = true;
+        x_last = e->x;
+        y_last = e->y;
+    }
+}
+
+void SignalViewUI::onButtonRelease(const PuglButtonEvent* e)
+{
+    int button = e->button;
+    if(button==BUTTON_MOTION){
+        mousing = false;
+    }
+}
+
+void SignalViewUI::onMotion(const PuglMotionEvent* e)
+{
+    if(mousing){
+        float dx = e->x - x_last;
+        linFreq -= dx * 50.0f;
+        if(linFreq<1000.0f)linFreq = 1000.0f;
+        float nyquist = rate/2.0;
+        if(linFreq>nyquist)linFreq = nyquist;
+        if(spectrum) spectrum->SetWidth(linFreq);
+        send_ui_state();
+        x_last = e->x;
+        y_last = e->y;
+    }
 }
 
 void SignalViewUI::port_event(
@@ -187,6 +261,18 @@ PuglStatus SignalViewUI::onEvent(const PuglEvent* event)
         {
             quit = true;
         }
+        break;
+    case PUGL_SCROLL:
+        onScroll(event->scroll.y, event->scroll.dy);
+        break;
+    case PUGL_BUTTON_PRESS:
+        onButtonPress(&event->button);
+        break;
+    case PUGL_BUTTON_RELEASE:
+        onButtonRelease(&event->button);
+        break;
+    case PUGL_MOTION:
+        onMotion(&event->motion);
         break;
     default:
         break;
@@ -364,6 +450,7 @@ void SignalViewUI::recv_ui_state(const LV2_Atom_Object* obj)
         rate = ((const LV2_Atom_Float*)rate_atom)->body;
         state_valid = true;
     }
+    setSpectrum();
 }
 
 static LV2UI_Handle instantiate(const struct LV2UI_Descriptor *descriptor, const char *plugin_uri, const char *bundle_path, LV2UI_Write_Function write_function, LV2UI_Controller controller, LV2UI_Widget *widget, const LV2_Feature *const *features)
