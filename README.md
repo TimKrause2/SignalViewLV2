@@ -25,6 +25,11 @@ command.
 
 ### Prerequisits
 
+If you need to install a compiler and the `make` command and you are on Ubuntu use the following
+command.
+
+    sudo apt install build-essential
+
 To build the plugin there are packages that are required. If you are using Ubuntu you can use
 the following commands to install the dependencies.
 
