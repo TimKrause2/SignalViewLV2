@@ -19,7 +19,7 @@ To toggle between logarithmic scale and linear scale click the right mouse butto
 The plugin depends on other github projects and therefore requires arguments to the clone
 command.
 
-`git clone --recurse-submodules https://github.com/TimKrause2/SignalViewLV2.git`
+    git clone --recurse-submodules https://github.com/TimKrause2/SignalViewLV2.git
 
 
 ### Prerequisits
