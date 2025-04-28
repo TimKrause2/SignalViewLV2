@@ -38,8 +38,8 @@ SignalView.lv2: SignalViewUI.so SignalView.so
 	cp manifest.ttl SignalView.lv2
 	cp SignalView.ttl SignalView.lv2
 	cp "sui generis rg.otf" SignalView.lv2
-	cp -u -r SignalView.lv2 ~/.lv2
-	zip -r $(BUILDDIR)/SignalView.zip SignalView.lv2
+	#cp -u -r SignalView.lv2 ~/.lv2
+	zip -r $(BUILDDIR)/SignalView.lv2.zip SignalView.lv2/*
 	rm -rf SignalView.lv2
 
 Font.o: Font.cpp
