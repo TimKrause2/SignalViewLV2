@@ -9,7 +9,8 @@ a time domain view, frequency domain view and a sonogram.
 ## User Interaction
 
 To adjust the level limits use the scroll wheel on the mouse while hovering over the spectrum.
-To adjust the frequency limit press the left mouse button and move the mouse left or right.
+To adjust the frequency limit while using the linear scale press the left mouse button and move the mouse left or right.
+The frequency limit for the logarithmic scale is fixed at the Nyquist frequency.
 To toggle between logarithmic scale and linear scale click the right mouse button.
 
 ## Building
@@ -24,16 +25,20 @@ command.
 
 ### Prerequisits
 
-To build the plugin there are packages that are required.
+To build the plugin there are packages that are required. If you are using Ubuntu you can use
+the following commands to install the dependencies.
 
-- fftw3
-- X11
-- GLX
-- freetype2
+    sudo apt install libxext-dev
+    sudo apt install libfftw3-dev
+    sudo apt install libx11-dev
+    sudo apt install libxcursor-dev
+    sudo apt install libxrandr-dev
+    sudo apt install libglx-dev
+    sudo apt install libfreetype-dev
 
-### Make
+### Make and Install
 
-To build and install SignalView is simple.
+To build and install SignalView is simple. In the source directory just enter the following command.
 
-`make`
+    make
 
