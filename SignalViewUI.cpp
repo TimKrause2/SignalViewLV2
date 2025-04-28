@@ -164,6 +164,10 @@ void SignalViewUI::onButtonPress(const PuglButtonEvent* e)
     if(button==BUTTON_LOG){
         log = !log;
         if(spectrum) spectrum->SetFrequency(log);
+        if(log){
+            linFreq = rate/2.0f;
+            if(spectrum) spectrum->SetWidth(linFreq);
+        }
         send_ui_state();
     }else if(button==BUTTON_MOTION){
         mousing = true;
@@ -182,7 +186,7 @@ void SignalViewUI::onButtonRelease(const PuglButtonEvent* e)
 
 void SignalViewUI::onMotion(const PuglMotionEvent* e)
 {
-    if(mousing){
+    if(mousing && !log){
         float dx = e->x - x_last;
         linFreq -= dx * 50.0f;
         if(linFreq<1000.0f)linFreq = 1000.0f;
