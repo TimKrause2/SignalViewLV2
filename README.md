@@ -1,5 +1,6 @@
 # SignalViewLV2
-![SignalView LV2 plugin analysing speech.](https://github.com/TimKrause2/SignalViewLV2/blob/main/screenshot.png)
+![SignalView LV2 plugin analysing speech.](https://github.com/TimKrause2/SignalViewLV2/blob/main/screenshot.png "SignalView analysing speech")
+*SignalView in action analysing speech.*
 
 ## Description
 
@@ -40,7 +41,7 @@ the following commands to install the dependencies.
     sudo apt install libxrandr-dev
     sudo apt install libglx-dev
     sudo apt install libfreetype-dev
-    sudo apt install ligglm-dev
+    sudo apt install libglm-dev
 
 ### Make and Install
 
