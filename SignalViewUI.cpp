@@ -13,12 +13,15 @@ SignalViewUI::SignalViewUI(
     controller(controller),
     bundle_path(bundle_path)
 {
-    void* parentXWindow = nullptr;
+    parentXWindow = nullptr;
+    map = nullptr;
+    logger_log = nullptr;
 
     const char* missing = lv2_features_query(
         features,
         LV2_URID__map, &map, true,
         LV2_UI__parent, &parentXWindow, true,
+        LV2_LOG__log, &logger_log, false,
         NULL);
 
     if (missing) {
@@ -28,6 +31,9 @@ SignalViewUI::SignalViewUI(
 
     uris = new SignalViewURIs(map);
     lv2_atom_forge_init(&forge, map);
+    lv2_log_logger_init(&logger, map, logger_log);
+
+    lv2_log_note(&logger, "SignalViewUI::SignalViewUI logger initialized.\n");
 
     state_valid = false;
     quit = false;
@@ -40,17 +46,54 @@ SignalViewUI::SignalViewUI(
 
     send_ui_send_state();
 
-    setupPugl(parentXWindow);
+    std::function<void()> deferred_task = std::bind(ui_thread_func, this);
+
+    ui_thread = std::thread(deferred_task);
 
 }
 
 SignalViewUI::~SignalViewUI()
 {
+    quit = true;
+
+    ui_thread.join();
+}
+
+void ui_thread_func(SignalViewUI* ui)
+{
+    // Initialize the pugl Window and View
+    ui->setupPugl();
+
+    // Enter the event loop
+    ui->eventLoop();
+
+}
+
+void SignalViewUI::eventLoop(void)
+{
+    if(!view_ready){
+        puglFreeView(view);
+        puglFreeWorld(world);
+        return;
+    }
+
+    // wait for the state
+    state_sem.wait();
+
+    // initialize the spectrum with the new state
+    setSpectrum();
+
+    // enter the event loop
+    while(!quit)
+    {
+        puglUpdate(world, -1.0);
+    }
+    printf("SignalViewUI::eventLoop puglFreeView\n");
     puglFreeView(view);
     puglFreeWorld(world);
 }
 
-void SignalViewUI::setupPugl(void* parent)
+void SignalViewUI::setupPugl(void)
 {
     world = puglNewWorld(PUGL_MODULE, 0);
     view = puglNewView(world);
@@ -70,16 +113,28 @@ void SignalViewUI::setupPugl(void* parent)
     puglSetViewHint(view, PUGL_RESIZABLE, PUGL_TRUE);
     puglSetViewHint(view, PUGL_SWAP_INTERVAL, PUGL_TRUE);
     puglSetHandle(view, this);
-    puglSetParent(view, (PuglNativeView)parent);
+    puglSetParent(view, (PuglNativeView)parentXWindow);
     puglSetEventFunc(view, ::onEvent);
 
     const PuglStatus st = puglRealize(view);
     if (st) {
-        throw;
-    }
+        lv2_log_error(
+            &logger,
+            "SignalViewUI::setupPugl puglRealize failed:%s\n",
+        puglStrerror(st));
+        view_ready = false;
+        view_sem.post();
+    }else{
+        lv2_log_note(&logger, "SignalViewUI::setupPugl view realized.\n");
 
-    // Show window
-    puglShow(view, PUGL_SHOW_RAISE);
+        view_ready = true;
+
+        // Show window
+        puglShow(view, PUGL_SHOW_RAISE);
+
+        // Signal to the host that the view is ready
+        view_sem.post();
+    }
 }
 
 void SignalViewUI::setSpectrum(void)
@@ -95,7 +150,8 @@ void SignalViewUI::setupGL(void)
 {
     // load glad
     if(!gladLoadGL((GLADloadfunc)&puglGetProcAddress)){
-        throw;
+        lv2_log_error(&logger, "SignalViewUI::setupGL gladLoadGL failed.\n");
+        return;
     }
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -234,17 +290,17 @@ PuglStatus SignalViewUI::onEvent(const PuglEvent* event)
     switch (event->type)
     {
     case PUGL_REALIZE:
-        //printf("PUGL_REALIZE\n");
+        printf("PUGL_REALIZE\n");
         setupGL();
         break;
     case PUGL_UNREALIZE:
-        //printf("PUGLE_UNREALIZE\n");
+        printf("PUGLE_UNREALIZE\n");
         teardownGL();
         break;
     case PUGL_CONFIGURE:
-        //printf("PUGL_CONFIGURE w:%d h:%d\n",
-        //    event->configure.width,
-        //    event->configure.height);
+        printf("PUGL_CONFIGURE w:%d h:%d\n",
+            event->configure.width,
+            event->configure.height);
         onConfigure(event->configure.width, event->configure.height);
         break;
     case PUGL_UPDATE:
@@ -256,11 +312,11 @@ PuglStatus SignalViewUI::onEvent(const PuglEvent* event)
         onExpose();
         break;
     case PUGL_CLOSE:
-        //printf("PUGL_CLOSE\n");
+        printf("PUGL_CLOSE\n");
         quit = true;
         break;
     case PUGL_KEY_PRESS:
-        //printf("PUGL_KEY_PRESS\n");
+        printf("PUGL_KEY_PRESS\n");
         if (event->key.key == 'q' || event->key.key == PUGL_KEY_ESCAPE)
         {
             quit = true;
@@ -287,7 +343,16 @@ PuglStatus SignalViewUI::onEvent(const PuglEvent* event)
 
 PuglNativeView SignalViewUI::getNativeView(void)
 {
-    return puglGetNativeView(view);
+    // wait for the view to be initialized;
+    view_sem.wait();
+
+    if(view_ready){
+        // return the native view
+        return puglGetNativeView(view);
+    }else{
+        return (PuglNativeView)0;
+    }
+
 }
 
 int SignalViewUI::ui_idle(void)
@@ -452,13 +517,15 @@ void SignalViewUI::recv_ui_state(const LV2_Atom_Object* obj)
     }
     if(rate_atom) {
         rate = ((const LV2_Atom_Float*)rate_atom)->body;
-        state_valid = true;
+
+        // signal to the ui thread that the state is valid
+        state_sem.post();
     }
-    setSpectrum();
 }
 
 static LV2UI_Handle instantiate(const struct LV2UI_Descriptor *descriptor, const char *plugin_uri, const char *bundle_path, LV2UI_Write_Function write_function, LV2UI_Controller controller, LV2UI_Widget *widget, const LV2_Feature *const *features)
 {
+    printf("instantiate\n");
     if (strcmp (plugin_uri, SIGNAL_VIEW_URI) != 0) return nullptr;
 
     SignalViewUI* ui;
@@ -478,12 +545,19 @@ static LV2UI_Handle instantiate(const struct LV2UI_Descriptor *descriptor, const
         return nullptr;
     }
 
-    *widget = (LV2UI_Widget)ui->getNativeView();
-    return (LV2UI_Handle) ui;
+    PuglNativeView nview = ui->getNativeView();
+    if(nview){
+        *widget = (LV2UI_Widget)nview;
+        return (LV2UI_Handle) ui;
+    }else{
+        delete ui;
+        return (LV2UI_Handle)nullptr;
+    }
 }
 
 static void cleanup (LV2UI_Handle ui)
 {
+    printf("cleanup\n");
     SignalViewUI* sui = static_cast<SignalViewUI*>(ui);
     if(sui) delete sui;
 }
@@ -500,19 +574,8 @@ static void port_event(
         sui->port_event(port_index,buffer_size,format,buffer);
 }
 
-static int ui_idle (LV2UI_Handle ui)
-{
-    SignalViewUI* sui = static_cast<SignalViewUI*>(ui);
-    if(sui){
-        return sui->ui_idle();
-    }
-    else return 0;
-}
-
 static const void * extension_data (const char *uri)
 {
-    static const LV2UI_Idle_Interface idle = { ui_idle };
-    if (strcmp (uri, LV2_UI__idleInterface) == 0) return &idle;
     return nullptr;
 }
 

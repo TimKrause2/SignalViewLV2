@@ -25,8 +25,8 @@ SignalView.so: SignalView.o
 
 SignalView.o: SignalView.cpp SignalView.h uris.h
 
-SignalViewUI.so: SignalViewUI.o Font.o Grid.o LGraph.o Shader.o Spectrum.o Waterfall.o $(BUILDDIR)/libpugl.a
-	g++ -Wall -Wextra -shared -fPIC -o SignalViewUI.so SignalViewUI.o Font.o Grid.o LGraph.o Shader.o Spectrum.o Waterfall.o \
+SignalViewUI.so: SignalViewUI.o Font.o Grid.o LGraph.o Shader.o Spectrum.o Waterfall.o Semaphore.o $(BUILDDIR)/libpugl.a
+	g++ -Wall -Wextra -shared -fPIC -o SignalViewUI.so SignalViewUI.o Font.o Grid.o LGraph.o Shader.o Spectrum.o Waterfall.o Semaphore.o\
 	 -L$(BUILDDIR) -lpugl `pkg-config --libs x11 xext xcursor xrandr glx fftw3 freetype2`
 
 SignalViewUI.o: SignalViewUI.cpp
@@ -54,4 +54,5 @@ Spectrum.o: Spectrum.cpp
 
 Waterfall.o: Waterfall.cpp
 
+Semaphore.o: Semaphore.cpp
 
