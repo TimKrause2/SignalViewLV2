@@ -160,7 +160,11 @@ void SignalViewUI::setSpectrum(void)
 {
     if(spectrum){
         spectrum->SetdBLimits(dB_min, dB_max);
-        spectrum->SetWidth(linFreq);
+        if(log){
+            spectrum->SetWidth(rate/2.0);
+        } else {
+            spectrum->SetWidth(linFreq);
+        }
         spectrum->SetFrequency(log);
     }
 }
@@ -240,7 +244,8 @@ void SignalViewUI::onButtonPress(const PuglButtonEvent* e)
         log = !log;
         if(spectrum) spectrum->SetFrequency(log);
         if(log){
-            linFreq = rate/2.0f;
+            if(spectrum) spectrum->SetWidth(rate/2.0);
+        }else{
             if(spectrum) spectrum->SetWidth(linFreq);
         }
         send_ui_state();

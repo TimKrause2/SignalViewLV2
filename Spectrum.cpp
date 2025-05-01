@@ -220,43 +220,41 @@ void Spectrum::EvaluateSample(float x_l, float x_r)
     x_cyclic_in_r[i_sample] = x_r;
     i_sample++;
     if(i_sample==Nfft)
+    {
         i_sample = 0;
+        for(int i=0;i<Nfft;i++){
+            x_draw_l[i_draw_back][i] = x_cyclic_in_l[i];
+            x_draw_r[i_draw_back][i] = x_cyclic_in_r[i];
+        }
+        i_draw_front ^= 1;
+        i_draw_back ^= 1;
+    }
     
     if(--count==0){
         count = Ncount;
-        int N1 = Nfft - i_sample;
-        int N2 = Nfft - N1;
-        int i_src = i_sample;
-        int i_dst = 0;
-        for(int i=0;i<N1;i++){
-            x_in_l[i_buffer][i_dst] = x_cyclic_in_l[i_src];
-            x_in_r[i_buffer][i_dst] = x_cyclic_in_r[i_src];
-            if(i_buffer==0){
-                x_draw_l[i_draw_back][i_dst] = x_cyclic_in_l[i_src];
-                x_draw_r[i_draw_back][i_dst] = x_cyclic_in_r[i_src];
+        if(ptrFifo.GetNumReady()<Ncopy){
+            int N1 = Nfft - i_sample;
+            int N2 = Nfft - N1;
+            int i_src = i_sample;
+            int i_dst = 0;
+            for(int i=0;i<N1;i++){
+                x_in_l[i_buffer][i_dst] = x_cyclic_in_l[i_src];
+                x_in_r[i_buffer][i_dst] = x_cyclic_in_r[i_src];
+                i_src++;
+                i_dst++;
             }
-            i_src++;
-            i_dst++;
-        }
-        i_src = 0;
-        for(int i=0;i<N2;i++){
-            x_in_l[i_buffer][i_dst] = x_cyclic_in_l[i_src];
-            x_in_r[i_buffer][i_dst] = x_cyclic_in_r[i_src];
-            if(i_buffer==0){
-                x_draw_l[i_draw_back][i_dst] = x_cyclic_in_l[i_src];
-                x_draw_r[i_draw_back][i_dst] = x_cyclic_in_r[i_src];
+            i_src = 0;
+            for(int i=0;i<N2;i++){
+                x_in_l[i_buffer][i_dst] = x_cyclic_in_l[i_src];
+                x_in_r[i_buffer][i_dst] = x_cyclic_in_r[i_src];
+                i_src++;
+                i_dst++;
             }
-            i_src++;
-            i_dst++;
+            ptrFifo.Push(i_buffer);
+            i_buffer++;
+            if(i_buffer==Ncopy)
+                i_buffer=0;
         }
-        if(i_buffer==0){
-            i_draw_front ^= 1;
-            i_draw_back ^= 1;
-        }
-        ptrFifo.Push(i_buffer);
-        i_buffer++;
-        if(i_buffer==Ncopy)
-            i_buffer=0;
     }
 }
 
