@@ -79,6 +79,10 @@ Spectrum::Spectrum(
     i_draw_back = 1;
     log = false;
     log_last = false;
+    for(int i=0;i<Nfft;i++){
+        x_draw_l[i_draw_front][i] = 0.0f;
+        x_draw_r[i_draw_front][i] = 0.0f;
+    }
 }
     
 Spectrum::~Spectrum()
