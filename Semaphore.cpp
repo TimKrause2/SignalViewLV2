@@ -19,9 +19,9 @@
 
 #include "Semaphore.h"
 
-Semaphore::Semaphore(void)
+Semaphore::Semaphore(int count)
 {
-    sem_init(&sem, 0, 0);
+    sem_init(&sem, 0, count);
 }
 
 Semaphore::~Semaphore(void)

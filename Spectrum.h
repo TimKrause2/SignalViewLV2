@@ -37,22 +37,33 @@
 #include "LGraph.h"
 #include "Waterfall.h"
 #include "Grid.h"
+#include "Semaphore.h"
 
 struct PtrFifo
 {
 private:
     std::deque<int> fifo;
+    Semaphore sem;
 
 public:
+    PtrFifo() : sem(1)
+    {
+
+    }
+
     void Push(int i)
     {
+        sem.wait();
         fifo.push_back(i);
+        sem.post();
     }
     
     int Pop(void)
     {
+        sem.wait();
         int r = fifo.front();
         fifo.pop_front();
+        sem.post();
         return r;
     }
 

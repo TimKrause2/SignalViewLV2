@@ -16,6 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#pragma once
 
 #include <semaphore.h>
 
@@ -23,7 +24,7 @@ class Semaphore
 {
     sem_t  sem;
 public:
-    Semaphore(void);
+    Semaphore(int count = 0);
     ~Semaphore(void);
     void post(void);
     void wait(void);
