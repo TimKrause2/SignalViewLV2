@@ -99,9 +99,6 @@ void SignalViewUI::eventLoop(void)
     // wait for the state
     state_sem.wait();
 
-    // initialize the spectrum with the new state
-    setSpectrum();
-
     // enter the event loop
     while(!quit)
     {
@@ -181,17 +178,17 @@ void SignalViewUI::setupGL(void)
 
     // Create a new SignalViewGL
     spectrum.reset(new Spectrum((int)(rate/10.0f),rate,2,bundle_path));
-    spectrum->GLInit();
+    if(spectrum) spectrum->GLInit();
     setSpectrum();
 
     // enable data from the plugin
-    send_ui_enable();
+    if(spectrum) send_ui_enable();
 }
 
 void SignalViewUI::teardownGL(void)
 {
     // disable data form the plugin
-    send_ui_disable();
+    if(spectrum) send_ui_disable();
 
     // destroy the SignalViewGL
     spectrum.reset(nullptr);
