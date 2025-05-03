@@ -38,10 +38,9 @@
 
 class LGraph
 {
-    static int    ref_count;
-    static GLuint programObject;
-    static GLint  colorLocation;
-    static GLint  projectionLocation;
+    GLuint programObject;
+    GLint  colorLocation;
+    GLint  projectionLocation;
     GLuint xVBO;
     GLuint yVBO;
     GLuint VAO;

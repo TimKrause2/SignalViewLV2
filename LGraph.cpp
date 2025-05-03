@@ -34,54 +34,41 @@
 #include <string.h>
 #include <stdio.h>
 
-int    LGraph::ref_count = 0;
-GLuint LGraph::programObject;
-GLint  LGraph::colorLocation;
-GLint  LGraph::projectionLocation;
-
 void LGraph::ProgramLoad(void)
 {
-    if(!ref_count){
-        const char *vertShaderSrc =
-                "#version 460\n"
-                "layout(location=0) in float a_x;\n"
-                "layout(location=1) in float a_y;\n"
-                "uniform mat4 projection;\n"
-                "void main()\n"
-                "{\n"
-                "   gl_Position = projection*vec4(a_x,a_y,0.0,1.0);\n"
-                "}\n";
+    const char *vertShaderSrc =
+        "#version 460\n"
+        "layout(location=0) in float a_x;\n"
+        "layout(location=1) in float a_y;\n"
+        "uniform mat4 projection;\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = projection*vec4(a_x,a_y,0.0,1.0);\n"
+        "}\n";
 
-        const char *fragShaderSrc =
-                "#version 460\n"
-                "layout(location = 0) out vec4 f_color;\n"
-                "uniform vec4 color;\n"
-                "void main()\n"
-                "{\n"
-                "   f_color = color;\n"
-                "}\n";
+    const char *fragShaderSrc =
+        "#version 460\n"
+        "layout(location = 0) out vec4 f_color;\n"
+        "uniform vec4 color;\n"
+        "void main()\n"
+        "{\n"
+        "   f_color = color;\n"
+        "}\n";
 
-        programObject = LoadProgram(vertShaderSrc, fragShaderSrc);
-        if(!programObject){
-            printf("lgraph.cpp: Error, couldn't load program.\n");
-            return;
-        }
-
-        colorLocation = glGetUniformLocation(programObject, "color");
-        projectionLocation = glGetUniformLocation(programObject, "projection");
-
+    programObject = LoadProgram(vertShaderSrc, fragShaderSrc);
+    if (!programObject)
+    {
+        printf("lgraph.cpp: Error, couldn't load program.\n");
+        return;
     }
-    ref_count++;
+
+    colorLocation = glGetUniformLocation(programObject, "color");
+    projectionLocation = glGetUniformLocation(programObject, "projection");
 }
 
 void LGraph::ProgramDestroy(void)
 {
-    if(ref_count){
-        ref_count--;
-        if(ref_count==0){
-            glDeleteProgram(programObject);
-        }
-    }
+    glDeleteProgram(programObject);
 }
 
 LGraph::LGraph(int Nvertices)
@@ -181,8 +168,6 @@ void LGraph::SetX(float *x)
 
 void LGraph::Draw(float *y0)
 {
-    if(ref_count==0)return;
-
     //glEnable(GL_BLEND);
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
