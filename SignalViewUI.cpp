@@ -542,6 +542,7 @@ void SignalViewUI::recv_ui_state(const LV2_Atom_Object* obj)
         // signal to the ui thread that the state is valid
         state_sem.post();
     }
+    setSpectrum();
 }
 
 static LV2UI_Handle instantiate(const struct LV2UI_Descriptor *descriptor, const char *plugin_uri, const char *bundle_path, LV2UI_Write_Function write_function, LV2UI_Controller controller, LV2UI_Widget *widget, const LV2_Feature *const *features)
