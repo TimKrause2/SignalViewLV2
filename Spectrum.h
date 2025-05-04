@@ -35,6 +35,7 @@
 #include <iostream>
 #include <deque>
 #include "LGraph.h"
+#include "GraphFill.h"
 #include "Waterfall.h"
 #include "Grid.h"
 #include "Semaphore.h"
@@ -114,6 +115,8 @@ private:
     glm::vec4 freq_color_l1;
     glm::vec4 freq_color_r0;
     glm::vec4 freq_color_r1;
+    glm::vec4 fill_color_l;
+    glm::vec4 fill_color_r;
     double fsamplerate;
     std::unique_ptr<float[]> x_cyclic_in_l;
     std::unique_ptr<float[]> x_cyclic_in_r;
@@ -131,6 +134,7 @@ private:
     
     std::unique_ptr<LGraph> lgraph;
     std::unique_ptr<LGraph> tgraph;
+    std::unique_ptr<GraphFill> fill;
     std::unique_ptr<Waterfall> waterfall;
     std::unique_ptr<Grid> grid;
     

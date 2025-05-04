@@ -124,12 +124,13 @@ void FreeTypeFont::DeleteQuad(void)
     quad_initialized = false;
 }
 
-#define TEXT_BUF_LENGTH 1024
-static char text[TEXT_BUF_LENGTH];
+#define TEXT_BUF_LENGTH 64
 
 void FreeTypeFont::Printf( double x, double y, const char *format, ... )
 {
     if(!loaded || !quad_initialized)return;
+    char text[TEXT_BUF_LENGTH];
+
 	va_list ap;
 	va_start( ap, format );
 	vsnprintf( text, TEXT_BUF_LENGTH, format, ap );
@@ -174,6 +175,7 @@ void FreeTypeFont::Printf( double x, double y, const char *format, ... )
 float FreeTypeFont::PrintfAdvance(const char *format, ... )
 {
     if(!loaded)return 0.0;
+    char text[TEXT_BUF_LENGTH];
     va_list ap;
     va_start( ap, format );
     vsnprintf( text, TEXT_BUF_LENGTH, format, ap );

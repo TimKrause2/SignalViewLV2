@@ -127,7 +127,7 @@ class SignalViewUI
         uint32_t format,
         const void *buffer);
     
-    PuglStatus onEvent(const PuglEvent* event);
+    PuglStatus onEvent(PuglView* view, const PuglEvent* event);
     PuglNativeView getNativeView(void);
     int ui_idle(void);
     void eventLoop(void);

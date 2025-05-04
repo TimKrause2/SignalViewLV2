@@ -104,7 +104,7 @@ void SignalViewUI::eventLoop(void)
     {
         puglUpdate(world, -1.0);
     }
-    printf("SignalViewUI::eventLoop puglFreeView\n");
+    //printf("SignalViewUI::eventLoop puglFreeView\n");
     puglFreeView(view);
     puglFreeWorld(world);
 }
@@ -301,27 +301,28 @@ PuglStatus onEvent(PuglView* view, const PuglEvent* event)
 {
     SignalViewUI* sv = (SignalViewUI*)puglGetHandle(view);
     if(sv){
-        return sv->onEvent(event);
+        return sv->onEvent(view, event);
     }
     return PUGL_SUCCESS;
 }
 
-PuglStatus SignalViewUI::onEvent(const PuglEvent* event)
+PuglStatus SignalViewUI::onEvent(PuglView* view, const PuglEvent* event)
 {
+    if(view != SignalViewUI::view) return PUGL_SUCCESS;
     switch (event->type)
     {
     case PUGL_REALIZE:
-        printf("PUGL_REALIZE\n");
+        //printf("PUGL_REALIZE\n");
         setupGL();
         break;
     case PUGL_UNREALIZE:
-        printf("PUGLE_UNREALIZE\n");
+        //printf("PUGLE_UNREALIZE\n");
         teardownGL();
         break;
     case PUGL_CONFIGURE:
-        printf("PUGL_CONFIGURE w:%d h:%d\n",
-            event->configure.width,
-            event->configure.height);
+        //printf("PUGL_CONFIGURE w:%d h:%d\n",
+        //    event->configure.width,
+        //    event->configure.height);
         onConfigure(event->configure.width, event->configure.height);
         break;
     case PUGL_UPDATE:
@@ -333,11 +334,11 @@ PuglStatus SignalViewUI::onEvent(const PuglEvent* event)
         onExpose();
         break;
     case PUGL_CLOSE:
-        printf("PUGL_CLOSE\n");
+        //printf("PUGL_CLOSE\n");
         quit = true;
         break;
     case PUGL_KEY_PRESS:
-        printf("PUGL_KEY_PRESS\n");
+        //printf("PUGL_KEY_PRESS\n");
         if (event->key.key == 'q' || event->key.key == PUGL_KEY_ESCAPE)
         {
             quit = true;
@@ -364,15 +365,20 @@ PuglStatus SignalViewUI::onEvent(const PuglEvent* event)
 
 PuglNativeView SignalViewUI::getNativeView(void)
 {
+    PuglNativeView r;
+
     // wait for the view to be initialized;
     view_sem.wait();
 
     if(view_ready){
         // return the native view
-        return puglGetNativeView(view);
+        r = puglGetNativeView(view);
     }else{
-        return (PuglNativeView)0;
+        r = (PuglNativeView)0;
     }
+
+    //printf("SignalViewUI::getNativeView r = %p\n", (void*)r);
+    return r;
 
 }
 
@@ -547,7 +553,7 @@ void SignalViewUI::recv_ui_state(const LV2_Atom_Object* obj)
 
 static LV2UI_Handle instantiate(const struct LV2UI_Descriptor *descriptor, const char *plugin_uri, const char *bundle_path, LV2UI_Write_Function write_function, LV2UI_Controller controller, LV2UI_Widget *widget, const LV2_Feature *const *features)
 {
-    printf("instantiate\n");
+    //printf("instantiate\n");
     if (strcmp (plugin_uri, SIGNAL_VIEW_URI) != 0) return nullptr;
 
     SignalViewUI* ui;
@@ -579,7 +585,7 @@ static LV2UI_Handle instantiate(const struct LV2UI_Descriptor *descriptor, const
 
 static void cleanup (LV2UI_Handle ui)
 {
-    printf("cleanup\n");
+    //printf("cleanup\n");
     SignalViewUI* sui = static_cast<SignalViewUI*>(ui);
     if(sui) delete sui;
 }

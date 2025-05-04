@@ -99,6 +99,9 @@ void Spectrum::GLInit(void)
     lgraph->SetLineWidths( 3.0f, 1.0f );
     lgraph->SetLimits(0.0f, -180.0f);
     
+    fill.reset(new GraphFill(Npoints));
+    fill->SetLimits(0.0f, -180.0f);
+
     waterfall.reset(new Waterfall(Npoints, 128));
 
     grid.reset(new Grid(Nfft, fsamplerate, bundle_path));
@@ -108,6 +111,7 @@ void Spectrum::GLDestroy(void)
 {
     lgraph.reset(nullptr);
     tgraph.reset(nullptr);
+    fill.reset(nullptr);
     waterfall.reset(nullptr);
     grid.reset(nullptr);
 }
@@ -188,7 +192,11 @@ void Spectrum::Render(void)
     lgraph->Draw(X_db_l.get());
     lgraph->SetColors(freq_color_r0, freq_color_r1);
     lgraph->Draw(X_db_r.get());
-    
+    fill->SetColor(fill_color_l);
+    fill->Draw(X_db_l.get());
+    fill->SetColor(fill_color_r);
+    fill->Draw(X_db_r.get());
+
     glDisable(GL_BLEND);
     
     glViewport(0, 0, viewport[2], viewport[3]/3);
@@ -199,6 +207,8 @@ void Spectrum::Render(void)
 
 void Spectrum::SetdBLimits(float dB_min, float dB_max)
 {
+    if(fill)
+        fill->SetLimits(dB_max, dB_min);
     if(lgraph)
         lgraph->SetLimits(dB_max, dB_min);
     if(waterfall)
@@ -210,6 +220,8 @@ void Spectrum::SetdBLimits(float dB_min, float dB_max)
 void Spectrum::SetWidth(float frequency)
 {
     float width = frequency/(fsamplerate/2.0);
+    if(fill)
+        fill->SetViewWidth(width);
     if(lgraph)
         lgraph->SetViewWidth(width);
     if(waterfall)
@@ -262,35 +274,28 @@ void Spectrum::EvaluateSample(float x_l, float x_r)
     }
 }
 
+glm::vec4 hsv2rgba(float hue, float sat, float val, float alpha)
+{
+    glm::vec3 hsv(hue, sat, val);
+    glm::vec3 rgb = glm::rgbColor(hsv);
+    return glm::vec4(rgb, alpha);
+}
+
 void Spectrum::SetColors(float hue_l)
 {
     float hue_r = hue_l + 180.0f;
     if(hue_r>=360.0f)
         hue_r -= 360.0f;
-    glm::vec3 time_hsv_l0(hue_l, 1.0f, 0.125f);
-    glm::vec3 time_hsv_l1(hue_l, 1.0f, 1.0f);
-    glm::vec3 time_hsv_r0(hue_r, 1.0f, 0.125f);
-    glm::vec3 time_hsv_r1(hue_r, 1.0f, 1.0f);
-    glm::vec3 time_rgb_l0 = glm::rgbColor(time_hsv_l0);
-    glm::vec3 time_rgb_l1 = glm::rgbColor(time_hsv_l1);
-    glm::vec3 time_rgb_r0 = glm::rgbColor(time_hsv_r0);
-    glm::vec3 time_rgb_r1 = glm::rgbColor(time_hsv_r1);
-    time_color_l0 = glm::vec4(time_rgb_l0, 1.0f);
-    time_color_l1 = glm::vec4(time_rgb_l1, 1.0f);
-    time_color_r0 = glm::vec4(time_rgb_r0, 1.0f);
-    time_color_r1 = glm::vec4(time_rgb_r1, 1.0f);
-    glm::vec3 freq_hsv_l0(hue_l, 1.0f, 0.1f);
-    glm::vec3 freq_hsv_l1(hue_l, 1.0f, 0.6f);
-    glm::vec3 freq_hsv_r0(hue_r, 1.0f, 0.1f);
-    glm::vec3 freq_hsv_r1(hue_r, 1.0f, 0.6f);
-    glm::vec3 freq_rgb_l0 = glm::rgbColor(freq_hsv_l0);
-    glm::vec3 freq_rgb_l1 = glm::rgbColor(freq_hsv_l1);
-    glm::vec3 freq_rgb_r0 = glm::rgbColor(freq_hsv_r0);
-    glm::vec3 freq_rgb_r1 = glm::rgbColor(freq_hsv_r1);
-    freq_color_l0 = glm::vec4(freq_rgb_l0, 1.0f);
-    freq_color_l1 = glm::vec4(freq_rgb_l1, 1.0f);
-    freq_color_r0 = glm::vec4(freq_rgb_r0, 1.0f);
-    freq_color_r1 = glm::vec4(freq_rgb_r1, 1.0f);
+    time_color_l0 = hsv2rgba(hue_l, 1.0f, 0.125f, 1.0f);
+    time_color_l1 = hsv2rgba(hue_l, 1.0f, 1.0f, 1.0f);
+    time_color_r0 = hsv2rgba(hue_r, 1.0f, 0.125f, 1.0f);
+    time_color_r1 = hsv2rgba(hue_r, 1.0f, 1.0f, 1.0f);
+    freq_color_l0 = hsv2rgba(hue_l, 1.0f, 0.1f, 1.0f);
+    freq_color_l1 = hsv2rgba(hue_l, 1.0f, 0.6f, 1.0f);
+    freq_color_r0 = hsv2rgba(hue_r, 1.0f, 0.1f, 1.0f);
+    freq_color_r1 = hsv2rgba(hue_r, 1.0f, 0.6f, 1.0f);
+    fill_color_l = hsv2rgba(hue_l, 1.0f, 0.3f, 1.0f);
+    fill_color_r = hsv2rgba(hue_r, 1.0f, 0.3f, 1.0f);
 }
 
 void Spectrum::SetFrequency(bool log)
@@ -320,6 +325,7 @@ void Spectrum::InitializeFrequency(void)
             x[i] = -1.0f + f*2.0f;
         }
     }
+    fill->SetX(x.get());
     lgraph->SetX(x.get());
     waterfall->InitializeFrequency(log);
     grid->SetFrequency(log);
