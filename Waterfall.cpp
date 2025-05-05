@@ -315,7 +315,7 @@ unsigned char Waterfall::dB2intensity(float dB_x)
     }else{
         intensity = (dB_x - dB_min)/(dB_max - dB_min);
     }
-    intensity*=intensity;
+    //intensity*=intensity;
     unsigned char c = intensity*255.0f;
     return c;
 }
