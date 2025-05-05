@@ -24,6 +24,8 @@
 
 #include "fontbase.h"
 
+#define TEXT_BUF_LENGTH 1024
+
 struct Character
 {
     GLuint    texture;
@@ -44,6 +46,7 @@ private:
     GLint     mvp_loc;
     GLint     s_texture_loc;
     float     descender;
+    char      text[TEXT_BUF_LENGTH];
 
     void InitQuad(void);
     void DeleteQuad(void);

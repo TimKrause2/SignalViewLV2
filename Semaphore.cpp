@@ -31,7 +31,10 @@ Semaphore::~Semaphore(void)
 
 void Semaphore::post(void)
 {
-    sem_post(&sem);
+    int val;
+    sem_getvalue(&sem, &val);
+    if(val<=0)
+        sem_post(&sem);
 }
 
 void Semaphore::wait(void)
