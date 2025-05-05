@@ -7,6 +7,10 @@
 SignalView is a LV2 plugin that provides a visual representation of a stereo audio signal. There is
 a time domain view, frequency domain view and a sonogram.
 
+## Download the plugin
+
+Precompiled binaries and an LV2 plugin bundle is available for download [here](https://twkrause.ca/#signalviewlv2)
+
 ## User Interaction
 
 To adjust the level limits use the scroll wheel on the mouse while hovering over the spectrum.
