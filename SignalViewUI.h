@@ -80,6 +80,7 @@ class SignalViewUI
 
     PuglWorld* world;
     PuglView*  view;
+    double     timeout;
     int        width;
     int        height;
     int        h1;

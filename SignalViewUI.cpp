@@ -99,10 +99,12 @@ void SignalViewUI::eventLoop(void)
     // wait for the state
     state_sem.wait();
 
+    timeout = 1.0 / puglGetViewHint(view, PUGL_REFRESH_RATE);
+
     // enter the event loop
     while(!quit)
     {
-        puglUpdate(world, -1.0);
+        puglUpdate(world, timeout);
     }
     //printf("SignalViewUI::eventLoop puglFreeView\n");
     puglFreeView(view);
