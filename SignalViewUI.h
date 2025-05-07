@@ -39,7 +39,7 @@
 #include <memory>
 #include <thread>
 #include <functional>
-#include <semaphore>
+#include <chrono>
 
 #define GLAD_GL_IMPLEMENTATION
 #include "glad/gl.h"
@@ -80,6 +80,8 @@ class SignalViewUI
 
     PuglWorld* world;
     PuglView*  view;
+    std::chrono::time_point<std::chrono::steady_clock> time_last;
+    float      frame_rate;
     double     timeout;
     int        width;
     int        height;

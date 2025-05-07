@@ -35,6 +35,7 @@
 
 #define X_LOC 0
 #define Y_LOC 1
+#define V_LOC 2
 
 class GraphFill
 {
@@ -43,6 +44,7 @@ class GraphFill
     GLint  projectionLocation;
     GLuint xVBO;
     GLuint yVBO;
+    GLuint vVBO;
     GLuint VAO;
     int Nvertices;
     glm::vec4 color;

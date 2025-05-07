@@ -30,19 +30,23 @@ void GraphFill::ProgramLoad(void)
         "#version 460\n"
         "layout(location=0) in float a_x;\n"
         "layout(location=1) in float a_y;\n"
+        "layout(location=2) in float a_value;\n"
+        "out float value;\n"
         "uniform mat4 projection;\n"
         "void main()\n"
         "{\n"
         "   gl_Position = projection*vec4(a_x,a_y,0.0,1.0);\n"
+        "   value = a_value;\n"
         "}\n";
 
     const char *fragShaderSrc =
         "#version 460\n"
         "layout(location = 0) out vec4 f_color;\n"
         "uniform vec4 color;\n"
+        "in float value;\n"
         "void main()\n"
         "{\n"
-        "   f_color = color;\n"
+        "   f_color = vec4(color.rgb*value, 1.0);\n"
         "}\n";
 
     programObject = LoadProgram(vertShaderSrc, fragShaderSrc);
@@ -70,6 +74,7 @@ GraphFill::GraphFill(int Nvertices)
 
     glGenBuffers(1, &xVBO);
     glGenBuffers(1, &yVBO);
+    glGenBuffers(1, &vVBO);
 
     glBindBuffer(GL_ARRAY_BUFFER, xVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float)*Nvertices*2,
@@ -89,7 +94,7 @@ GraphFill::GraphFill(int Nvertices)
 
     glBindBuffer(GL_ARRAY_BUFFER, yVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float)*Nvertices*2,
-                 NULL, GL_STREAM_DRAW);
+                 NULL, GL_DYNAMIC_DRAW);
 
     float *yVBOmap = (float*)glMapBufferRange(GL_ARRAY_BUFFER,
                                               0, sizeof(float)*Nvertices*2,
@@ -98,6 +103,21 @@ GraphFill::GraphFill(int Nvertices)
     for(int i=0;i<Nvertices;i++){
         yVBOmap[2*i] = 0.0f;
         yVBOmap[2*i+1] = -180.0f;
+    }
+
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*Nvertices*2,
+                 NULL, GL_DYNAMIC_DRAW);
+
+    float *vVBOmap = (float*)glMapBufferRange(GL_ARRAY_BUFFER,
+                                              0, sizeof(float)*Nvertices*2,
+                                              GL_MAP_WRITE_BIT|
+                                              GL_MAP_INVALIDATE_BUFFER_BIT);
+    for(int i=0;i<Nvertices;i++){
+        vVBOmap[2*i] = 1.0f;
+        vVBOmap[2*i+1] = 0.0f;
     }
 
     glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -114,6 +134,10 @@ GraphFill::GraphFill(int Nvertices)
     glVertexAttribPointer(Y_LOC, 1, GL_FLOAT, GL_FALSE, 0, NULL);
     glEnableVertexAttribArray(Y_LOC);
 
+    glBindBuffer(GL_ARRAY_BUFFER, vVBO);
+    glVertexAttribPointer(V_LOC, 1, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(V_LOC);
+
     glBindVertexArray(0);
     
     view_width = 1.0f;
@@ -126,6 +150,7 @@ GraphFill::~GraphFill(void)
 
     glDeleteBuffers(1, &xVBO);
     glDeleteBuffers(1, &yVBO);
+    glDeleteBuffers(1, &vVBO);
     glDeleteVertexArrays(1, &VAO);
 }
 
@@ -166,15 +191,18 @@ void GraphFill::Draw(float *y0)
     //glEnable(GL_BLEND);
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    float thickness = (ytop - ybottom)*0.5f;
+
     glBindBuffer(GL_ARRAY_BUFFER, yVBO);
 
     float *yVBOmap = (float *)glMapBufferRange(
         GL_ARRAY_BUFFER,
         0, sizeof(float) * Nvertices*2,
-        GL_MAP_WRITE_BIT | GL_MAP_READ_BIT);
+        GL_MAP_WRITE_BIT);
 
     for(int i=0;i<Nvertices;i++){
         yVBOmap[i*2] = y0[i];
+        yVBOmap[i*2+1] = y0[i]-thickness;
     }
 
     glUnmapBuffer(GL_ARRAY_BUFFER);

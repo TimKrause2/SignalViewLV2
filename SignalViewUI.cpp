@@ -65,6 +65,8 @@ SignalViewUI::SignalViewUI(
 
     send_ui_send_state();
 
+    time_last = std::chrono::steady_clock::now();
+
     std::function<void()> deferred_task = std::bind(ui_thread_func, this);
 
     ui_thread = std::thread(deferred_task);
@@ -179,7 +181,14 @@ void SignalViewUI::setupGL(void)
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     // Create a new SignalViewGL
-    spectrum.reset(new Spectrum((int)(rate/10.0f),rate,2,bundle_path));
+    frame_rate = puglGetViewHint(view, PUGL_REFRESH_RATE);
+    spectrum.reset(
+        new Spectrum(
+            (int)(rate/10.0f),
+            rate,
+            frame_rate,
+            3,
+            bundle_path));
     if(spectrum) spectrum->GLInit();
     setSpectrum();
 
@@ -207,6 +216,15 @@ void SignalViewUI::onConfigure(int width, int height)
 
 void SignalViewUI::onExpose(void)
 {
+    // std::chrono::time_point<std::chrono::steady_clock> 
+    //     time_now = std::chrono::steady_clock::now();
+
+    // std::chrono::duration<double> diff = time_now - time_last;
+
+    // std::cout << "frame interval(%):" << diff.count()*frame_rate*100.0 << std::endl;
+
+    // time_last = time_now;
+
     glViewport(0, 0, width, height);
     // draw the SignalViewGL
     // printf("SignalViewUI::onExpose\n");

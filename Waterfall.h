@@ -46,7 +46,11 @@ private:
     int  Npoints;
     int  Nlines;
     bool texture_phase;
+    bool texture_swapped;
     int  line;
+    float draw_line;
+    float lines_per_frame;
+    float threshold;
     float view_width;
     float view_height;
     float dB_min;
@@ -64,13 +68,12 @@ private:
     GLint s_texture_loc;
     GLint color_l_loc;
     GLint color_r_loc;
-    
     void InitQuads(void);
     void DeleteQuads(void);
     unsigned char dB2intensity(float dB);
     void InitializeBuffers(void);
 public:
-    Waterfall(int Npoints, int Nlines);
+    Waterfall(int Npoints, int Nlines, float line_rate, float frame_rate);
     ~Waterfall();
     
     void InitializeFrequency(bool log=false);

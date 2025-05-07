@@ -37,10 +37,13 @@
 Spectrum::Spectrum(
     int Nfft,
     double fsamplerate,
+    float frame_rate,
     int Ncopy,
-    const char* bundle_path):
+    const char* bundle_path)
+    :
     Nfft(Nfft),
     fsamplerate(fsamplerate),
+    frame_rate(frame_rate),
     Ncopy(Ncopy),
     bundle_path(bundle_path)
 {
@@ -102,7 +105,8 @@ void Spectrum::GLInit(void)
     fill.reset(new GraphFill(Npoints));
     fill->SetLimits(0.0f, -180.0f);
 
-    waterfall.reset(new Waterfall(Npoints, 128));
+    float line_rate = fsamplerate/Nfft*Ncopy;
+    waterfall.reset(new Waterfall(Npoints, 128, line_rate, frame_rate));
 
     grid.reset(new Grid(Nfft, fsamplerate, bundle_path));
 }
@@ -290,12 +294,12 @@ void Spectrum::SetColors(float hue_l)
     time_color_l1 = hsv2rgba(hue_l, 1.0f, 1.0f, 1.0f);
     time_color_r0 = hsv2rgba(hue_r, 1.0f, 0.125f, 1.0f);
     time_color_r1 = hsv2rgba(hue_r, 1.0f, 1.0f, 1.0f);
-    freq_color_l0 = hsv2rgba(hue_l, 1.0f, 0.1f, 1.0f);
-    freq_color_l1 = hsv2rgba(hue_l, 1.0f, 0.6f, 1.0f);
-    freq_color_r0 = hsv2rgba(hue_r, 1.0f, 0.1f, 1.0f);
-    freq_color_r1 = hsv2rgba(hue_r, 1.0f, 0.6f, 1.0f);
-    fill_color_l = hsv2rgba(hue_l, 1.0f, 0.3f, 1.0f);
-    fill_color_r = hsv2rgba(hue_r, 1.0f, 0.3f, 1.0f);
+    freq_color_l0 = hsv2rgba(hue_l, 1.0f, 0.25f, 1.0f);
+    freq_color_l1 = hsv2rgba(hue_l, 1.0f, 0.5f, 1.0f);
+    freq_color_r0 = hsv2rgba(hue_r, 1.0f, 0.25f, 1.0f);
+    freq_color_r1 = hsv2rgba(hue_r, 1.0f, 0.5f, 1.0f);
+    fill_color_l = hsv2rgba(hue_l, 1.0f, 0.5f, 1.0f);
+    fill_color_r = hsv2rgba(hue_r, 1.0f, 0.5f, 1.0f);
 }
 
 void Spectrum::SetFrequency(bool log)

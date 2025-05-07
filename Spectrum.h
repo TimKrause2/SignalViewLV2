@@ -80,6 +80,7 @@ public:
     Spectrum(
         int Nfft,
         double fsamplerate,
+        float frame_rate,
         int Ncopy,
         const char* bundle_path);
     ~Spectrum();
@@ -118,6 +119,7 @@ private:
     glm::vec4 fill_color_l;
     glm::vec4 fill_color_r;
     double fsamplerate;
+    float frame_rate;
     std::unique_ptr<float[]> x_cyclic_in_l;
     std::unique_ptr<float[]> x_cyclic_in_r;
     std::unique_ptr<std::unique_ptr<float[]>[]> x_draw_l;

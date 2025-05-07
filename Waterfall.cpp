@@ -267,14 +267,23 @@ void Waterfall::InitializeFrequency(bool log)
 }
 
 
-Waterfall::Waterfall(int Npoints, int Nlines) :
+Waterfall::Waterfall(
+    int Npoints,
+    int Nlines,
+    float line_rate,
+    float frame_rate) :
     Npoints(Npoints),
     Nlines(Nlines)
 {
     InitQuads();
     if(!quadsInitialized) return;
     line = Nlines;
+    draw_line = 1.0f;
+    lines_per_frame = line_rate/frame_rate;
+    threshold = ceilf(lines_per_frame);
+    //std::cout << "lines_per_frame:" << lines_per_frame << std::endl;
     texture_phase = true;
+    texture_swapped = false;
     current_tex = textures[0];
     trailing_tex = textures[1];
     view_width = 1.0;
@@ -326,6 +335,7 @@ void Waterfall::InsertLine(float *data_l, float *data_r)
     if(!quadsInitialized) return;
     if(line==Nlines){
         line = 0;
+        texture_swapped = true;
         if(texture_phase){
             texture_phase = false;
             current_tex = textures[1];
@@ -335,6 +345,12 @@ void Waterfall::InsertLine(float *data_l, float *data_r)
             current_tex = textures[0];
             trailing_tex = textures[1];
         }
+        glClearTexImage(
+            current_tex,
+            0,
+            GL_RG,
+            GL_UNSIGNED_BYTE,
+            NULL);
     }
     for(int i=0;i<Npoints;i++){
         pixels[i].r = dB2intensity(data_l[i]);
@@ -349,13 +365,34 @@ void Waterfall::InsertLine(float *data_l, float *data_r)
 void Waterfall::Render(glm::vec4 &color_l, glm::vec4 &color_r)
 {
     if(!quadsInitialized) return;
+
+    if(texture_swapped){
+        texture_swapped = false;
+        draw_line -= Nlines;
+    }
+    float delta = line - draw_line;
+    //std::cout << ".";
+    if(delta>=0.0f){
+        if(delta>threshold){
+            draw_line += delta - threshold;
+            //std::cout << "+ delta:" << delta;
+        }
+    } else {
+        if(delta<-threshold){
+            draw_line += delta + threshold;
+            //std::cout << "- delta:" << delta;
+        }
+    }
+    //std::cout << std::endl;
+
     float top = 0.0;
     float bottom = -view_height;
     float left = 0.0;
     float right = view_width;
     
     glm::mat4 M_proj = glm::ortho(left, right, bottom, top);
-    glm::vec3 v_trans(0.0f, -(float)line/Nlines, 0.0f);
+    glm::vec3 v_trans(0.0f, -draw_line/Nlines, 0.0f);
+    draw_line += lines_per_frame;
     glm::mat4 M_trans = glm::translate(v_trans);
     glm::mat4 M_mvp = M_proj*M_trans;
     glUseProgram(program);
