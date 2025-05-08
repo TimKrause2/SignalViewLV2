@@ -150,15 +150,15 @@ void LGraph::SetViewWidth(float width)
     view_width = width;
 }
 
-void LGraph::SetX(float *x)
+void LGraph::SetX(float *x, int N)
 {
     glBindBuffer(GL_ARRAY_BUFFER, xVBO);
 
     float *xVBOmap = (float*)glMapBufferRange(GL_ARRAY_BUFFER,
-                                              0, sizeof(float)*Nvertices,
+                                              0, sizeof(float)*N,
                                               GL_MAP_WRITE_BIT|
                                               GL_MAP_INVALIDATE_BUFFER_BIT);
-    for(int i=0;i<Nvertices;i++){
+    for(int i=0;i<N;i++){
         xVBOmap[i] = x[i];
     }
 
@@ -166,7 +166,7 @@ void LGraph::SetX(float *x)
 }
 
 
-void LGraph::Draw(float *y0)
+void LGraph::Draw(float *y0, int N)
 {
     //glEnable(GL_BLEND);
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -174,10 +174,10 @@ void LGraph::Draw(float *y0)
     glBindBuffer(GL_ARRAY_BUFFER, yVBO);
 
     float *yVBOmap = (float*)glMapBufferRange(GL_ARRAY_BUFFER,
-                                              0, sizeof(float)*Nvertices,
+                                              0, sizeof(float)*N,
                                               GL_MAP_WRITE_BIT|
                                               GL_MAP_INVALIDATE_BUFFER_BIT);
-    memcpy(yVBOmap, y0, sizeof(float)*Nvertices);
+    memcpy(yVBOmap, y0, sizeof(float)*N);
 
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
@@ -197,11 +197,11 @@ void LGraph::Draw(float *y0)
 
     glUniform4fv(colorLocation, 1, glm::value_ptr(color0));
     glLineWidth(lineWidth0);
-    glDrawArrays(GL_LINE_STRIP, 0, Nvertices);
+    glDrawArrays(GL_LINE_STRIP, 0, N);
 
     glUniform4fv(colorLocation, 1, glm::value_ptr(color1));
     glLineWidth(lineWidth1);
-    glDrawArrays(GL_LINE_STRIP, 0, Nvertices);
+    glDrawArrays(GL_LINE_STRIP, 0, N);
 
     glBindVertexArray(0);
     glUseProgram(0);

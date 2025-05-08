@@ -52,6 +52,10 @@ Spectrum::Spectrum(
     X_fft.reset(new std::complex<double>[Npoints]);
     X_db_l.reset(new float[Npoints]);
     X_db_r.reset(new float[Npoints]);
+    x_points.reset(new float[Npoints]);
+    X_db_l_p.reset(new float[Npoints]);
+    X_db_r_p.reset(new float[Npoints]);
+    x_points_p.reset(new float[Npoints]);
     x_plan = fftw_plan_dft_r2c_1d(
         Nfft,
         x_fft.get(),
@@ -109,6 +113,8 @@ void Spectrum::GLInit(void)
     waterfall.reset(new Waterfall(Npoints, 128, line_rate, frame_rate));
 
     grid.reset(new Grid(Nfft, fsamplerate, bundle_path));
+
+    InitializeFrequency();
 }
 
 void Spectrum::GLDestroy(void)
@@ -186,20 +192,23 @@ void Spectrum::Render(void)
 
     glViewport(0, 2*viewport[3]/3, viewport[2], viewport[3]/3);
     tgraph->SetColors(time_color_l0, time_color_l1);
-    tgraph->Draw(x_draw_l[i_draw_front].get());
+    tgraph->Draw(x_draw_l[i_draw_front].get(), Nfft);
     tgraph->SetColors(time_color_r0, time_color_r1);
-    tgraph->Draw(x_draw_r[i_draw_front].get());
+    tgraph->Draw(x_draw_r[i_draw_front].get(), Nfft);
     
     glViewport(0, viewport[3]/3, viewport[2], viewport[3]/3);
     grid->Draw();
+    CoalescePoints(viewport[2]);
+    lgraph->SetX(x_points_p.get(), Npoints_p);
+    fill->SetX(x_points_p.get(), Npoints_p);
     lgraph->SetColors(freq_color_l0, freq_color_l1);
-    lgraph->Draw(X_db_l.get());
+    lgraph->Draw(X_db_l_p.get(), Npoints_p);
     lgraph->SetColors(freq_color_r0, freq_color_r1);
-    lgraph->Draw(X_db_r.get());
+    lgraph->Draw(X_db_r_p.get(), Npoints_p);
     fill->SetColor(fill_color_l);
-    fill->Draw(X_db_l.get());
+    fill->Draw(X_db_l_p.get(), Npoints_p);
     fill->SetColor(fill_color_r);
-    fill->Draw(X_db_r.get());
+    fill->Draw(X_db_r_p.get(), Npoints_p);
 
     glDisable(GL_BLEND);
     
@@ -223,15 +232,15 @@ void Spectrum::SetdBLimits(float dB_min, float dB_max)
 
 void Spectrum::SetWidth(float frequency)
 {
-    float width = frequency/(fsamplerate/2.0);
+    alpha_width = frequency/(fsamplerate/2.0);
     if(fill)
-        fill->SetViewWidth(width);
+        fill->SetViewWidth(alpha_width);
     if(lgraph)
-        lgraph->SetViewWidth(width);
+        lgraph->SetViewWidth(alpha_width);
     if(waterfall)
-        waterfall->SetViewWidth(width);
+        waterfall->SetViewWidth(alpha_width);
     if(grid)
-        grid->SetViewWidth(width);
+        grid->SetViewWidth(alpha_width);
 }
 
 void Spectrum::EvaluateSample(float x_l, float x_r)
@@ -309,16 +318,13 @@ void Spectrum::SetFrequency(bool log)
 
 void Spectrum::InitializeFrequency(void)
 {
-    std::unique_ptr<float[]> x;
-    x.reset(new float[Npoints]);
-
     if(!log){
         for(int i=0;i<Npoints;i++){
             float alpha = (float)i/(Npoints-1);
-            x[i] = alpha;
+            x_points[i] = alpha;
         }
     }else{
-        x[0] = 0.0f;
+        x_points[0] = 0.0f;
         float alpha2 = logf(2.0f)/logf((float)Npoints);
         float beta = alpha2/(1.0f + alpha2);
         float one_m_beta = 1.0f - beta;
@@ -326,11 +332,46 @@ void Spectrum::InitializeFrequency(void)
         for(int i=1;i<Npoints;i++){
             float alpha = logf((float)i) / logf((float)Npoints);
             float f = beta + alpha*one_m_beta;
-            x[i] = f;
+            x_points[i] = f;
         }
     }
-    fill->SetX(x.get());
-    lgraph->SetX(x.get());
+    //fill->SetX(x.get());
+    //lgraph->SetX(x.get());
     waterfall->InitializeFrequency(log);
     grid->SetFrequency(log);
+}
+
+void Spectrum::CoalescePoints(int pix_width)
+{
+    float db_max_l = X_db_l[0];
+    float db_max_r = X_db_r[0];
+    int i_p=0;
+    float pix_threshold = floorf(x_points[0]*pix_width + 1.0f);
+    float alpha0 = 0.0f;
+    for(int i=1;i<Npoints;i++){
+        float pix = x_points[i]*pix_width/alpha_width;
+        if(pix>=pix_threshold 
+            || i==(Npoints-1)
+            || pix >= pix_width)
+        {
+            x_points_p[i_p] = alpha0;
+            X_db_l_p[i_p] = db_max_l;
+            X_db_r_p[i_p] = db_max_r;
+            db_max_l = X_db_l[i];
+            db_max_r = X_db_r[i];
+            i_p++;
+            alpha0 = x_points[i];
+            if(pix>=pix_width)
+                break;
+            pix_threshold = floorf(pix+1.0f);
+        } else {
+            if(X_db_l[i]>db_max_l){
+                db_max_l = X_db_l[i];
+            }
+            if(X_db_r[i]>db_max_r){
+                db_max_r = X_db_r[i];
+            }
+        }
+    }
+    Npoints_p = i_p;
 }

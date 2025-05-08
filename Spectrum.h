@@ -97,6 +97,7 @@ public:
 private:
     int Nfft;
     int Npoints;
+    int Npoints_p;
     int Ncopy;
     const char* bundle_path;
     int index_last;
@@ -108,6 +109,7 @@ private:
     int i_draw_back;
     bool log;
     bool log_last;
+    float alpha_width;
     glm::vec4 time_color_l0;
     glm::vec4 time_color_l1;
     glm::vec4 time_color_r0;
@@ -146,6 +148,7 @@ private:
     
     void ComputeSpectrum(float *x, std::unique_ptr<float[]> &X_db);
     void InitializeFrequency(void);
+    void CoalescePoints(int pix_width);
 };
 
 

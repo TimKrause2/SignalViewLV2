@@ -63,7 +63,7 @@ public:
     void SetLineWidths(float lineWidth0, float lineWidth1);
     void SetLimits(float ytop, float ybottom);
     void SetViewWidth(float width);
-    void SetX(float *x);
-    void Draw(float *y);
+    void SetX(float *x, int N);
+    void Draw(float *y, int N);
 };
 

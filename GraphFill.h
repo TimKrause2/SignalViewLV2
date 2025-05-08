@@ -61,7 +61,7 @@ public:
     void SetColor(glm::vec4 &color);
     void SetLimits(float ytop, float ybottom);
     void SetViewWidth(float width);
-    void SetX(float *x);
-    void Draw(float *y);
+    void SetX(float *x, int N);
+    void Draw(float *y, int N);
 };
 
