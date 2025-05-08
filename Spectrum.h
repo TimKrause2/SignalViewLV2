@@ -132,6 +132,10 @@ private:
     fftw_plan x_plan;
     std::unique_ptr<float[]> X_db_l;
     std::unique_ptr<float[]> X_db_r;
+    std::unique_ptr<float[]> x_points;
+    std::unique_ptr<float[]> X_db_l_p;
+    std::unique_ptr<float[]> X_db_r_p;
+    std::unique_ptr<float[]> x_points_p;
     PtrFifo ptrFifo;
     
     std::unique_ptr<LGraph> lgraph;

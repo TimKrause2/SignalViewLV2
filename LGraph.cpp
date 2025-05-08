@@ -92,7 +92,7 @@ LGraph::LGraph(int Nvertices)
                                               GL_MAP_WRITE_BIT|
                                               GL_MAP_INVALIDATE_BUFFER_BIT);
     for(int i=0;i<Nvertices;i++){
-        xVBOmap[i] = ((float)i/(Nvertices-1))*2.0 - 1.0;
+        xVBOmap[i] = ((float)i/(Nvertices-1));
     }
 
     glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -187,8 +187,8 @@ void LGraph::Draw(float *y0)
 
     float top = ytop;
     float bottom = ybottom;
-    float left = -1.0f;
-    float right = -1.0f + view_width*2.0f;
+    float left = 0.0f;
+    float right = view_width;
     float near =  1.0f;
     float far = -1.0f;
     glm::mat4 projection = glm::ortho(left, right, bottom, top, near, far);

@@ -315,10 +315,10 @@ void Spectrum::InitializeFrequency(void)
     if(!log){
         for(int i=0;i<Npoints;i++){
             float alpha = (float)i/(Npoints-1);
-            x[i] = -1.0f + alpha*2.0f;
+            x[i] = alpha;
         }
     }else{
-        x[0] = -1.0f;
+        x[0] = 0.0f;
         float alpha2 = logf(2.0f)/logf((float)Npoints);
         float beta = alpha2/(1.0f + alpha2);
         float one_m_beta = 1.0f - beta;
@@ -326,7 +326,7 @@ void Spectrum::InitializeFrequency(void)
         for(int i=1;i<Npoints;i++){
             float alpha = logf((float)i) / logf((float)Npoints);
             float f = beta + alpha*one_m_beta;
-            x[i] = -1.0f + f*2.0f;
+            x[i] = f;
         }
     }
     fill->SetX(x.get());
