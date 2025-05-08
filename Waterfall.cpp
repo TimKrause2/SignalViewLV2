@@ -283,7 +283,6 @@ Waterfall::Waterfall(
     threshold = ceilf(lines_per_frame);
     //std::cout << "lines_per_frame:" << lines_per_frame << std::endl;
     texture_phase = true;
-    texture_swapped = false;
     current_tex = textures[0];
     trailing_tex = textures[1];
     view_width = 1.0;
@@ -335,7 +334,7 @@ void Waterfall::InsertLine(float *data_l, float *data_r)
     if(!quadsInitialized) return;
     if(line==Nlines){
         line = 0;
-        texture_swapped = true;
+        draw_line -= Nlines;
         if(texture_phase){
             texture_phase = false;
             current_tex = textures[1];
@@ -366,10 +365,6 @@ void Waterfall::Render(glm::vec4 &color_l, glm::vec4 &color_r)
 {
     if(!quadsInitialized) return;
 
-    if(texture_swapped){
-        texture_swapped = false;
-        draw_line -= Nlines;
-    }
     float delta = line - draw_line;
     //std::cout << ".";
     if(delta>=0.0f){

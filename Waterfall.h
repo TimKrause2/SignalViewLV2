@@ -46,7 +46,6 @@ private:
     int  Npoints;
     int  Nlines;
     bool texture_phase;
-    bool texture_swapped;
     int  line;
     float draw_line;
     float lines_per_frame;
