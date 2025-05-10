@@ -38,6 +38,7 @@
 #include <string.h>
 #include <memory>
 #include <thread>
+#include <system_error>
 #include <functional>
 #include <chrono>
 
@@ -58,7 +59,7 @@ class SignalViewUI
     LV2_URID_Map*   map;
     LV2_Log_Logger  logger;
     LV2_Log_Log*    logger_log;
-    SignalViewURIs* uris;
+    std::unique_ptr<SignalViewURIs> uris;
     uint8_t         obj_buf[4096];
 
     LV2UI_Write_Function write;

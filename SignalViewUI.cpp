@@ -45,10 +45,10 @@ SignalViewUI::SignalViewUI(
 
     if (missing) {
         printf("Missing feature <%s>\n", missing);
-        throw;
+        throw std::exception();
     }
 
-    uris = new SignalViewURIs(map);
+    uris.reset(new SignalViewURIs(map));
     lv2_atom_forge_init(&forge, map);
     lv2_log_logger_init(&logger, map, logger_log);
 
@@ -63,13 +63,19 @@ SignalViewUI::SignalViewUI(
     log = false;
     mousing = false;
 
-    send_ui_send_state();
-
     time_last = std::chrono::steady_clock::now();
 
     std::function<void()> deferred_task = std::bind(ui_thread_func, this);
 
-    ui_thread = std::thread(deferred_task);
+    try {
+        ui_thread = std::thread(deferred_task);
+    }
+    catch(const std::system_error& e){
+        lv2_log_error(&logger, "SignalViewUI::SignalViewUI Couldn't start thread.\n");
+        throw;
+    }
+
+    send_ui_send_state();
 
 }
 
@@ -87,21 +93,18 @@ void ui_thread_func(SignalViewUI* ui)
 
     // Enter the event loop
     ui->eventLoop();
-
 }
 
 void SignalViewUI::eventLoop(void)
 {
     if(!view_ready){
-        puglFreeView(view);
-        puglFreeWorld(world);
         return;
     }
 
     // wait for the state
     state_sem.wait();
 
-    timeout = 1.0 / puglGetViewHint(view, PUGL_REFRESH_RATE);
+    timeout = 1.0 / frame_rate;
 
     // enter the event loop
     while(!quit)
@@ -116,7 +119,20 @@ void SignalViewUI::eventLoop(void)
 void SignalViewUI::setupPugl(void)
 {
     world = puglNewWorld(PUGL_MODULE, 0);
+    if(!world){
+        lv2_log_error(&logger, "SignalViewUI::setupPugl puglNewWorld failed.\n");
+        view_ready = false;
+        view_sem.post();
+        return;
+    }
     view = puglNewView(world);
+    if(!view){
+        lv2_log_error(&logger, "SignalViewUI::setupPugl puglNewView failed.\n");
+        puglFreeWorld(world);
+        view_ready = false;
+        view_sem.post();
+        return;
+    }
     puglSetWorldString(world, PUGL_CLASS_NAME, "SignalView");
     puglSetViewString(view, PUGL_WINDOW_TITLE, "SignalView");
     puglSetSizeHint(view, PUGL_DEFAULT_SIZE, 400, 400);
@@ -142,6 +158,8 @@ void SignalViewUI::setupPugl(void)
             &logger,
             "SignalViewUI::setupPugl puglRealize failed:%s\n",
         puglStrerror(st));
+        puglFreeView(view);
+        puglFreeWorld(world);
         view_ready = false;
         view_sem.post();
     }else{
@@ -180,17 +198,43 @@ void SignalViewUI::setupGL(void)
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-    // Create a new SignalViewGL
     frame_rate = puglGetViewHint(view, PUGL_REFRESH_RATE);
-    spectrum.reset(
-        new Spectrum(
-            (int)(rate/10.0f),
-            rate,
-            frame_rate,
-            3,
-            bundle_path));
-    if(spectrum) spectrum->GLInit();
-    setSpectrum();
+
+    lv2_log_note(&logger, "SignalViewUI frame_rate=%f\n", frame_rate);
+
+    // Create a new SignalViewGL
+    try {
+        spectrum.reset(
+            new Spectrum(
+                (int)(rate / 10.0f),
+                rate,
+                frame_rate,
+                3,
+                bundle_path));
+    }
+    catch(const std::bad_alloc& e){
+        lv2_log_error(&logger, "Spectrum memory allocation error\n");
+    }
+    catch(...){
+        lv2_log_error(&logger, "Error initializing Spectrum.");
+    }
+
+    if(spectrum) {
+        try {
+            spectrum->GLInit();
+        } 
+        catch(const std::bad_alloc& e) {
+            lv2_log_error(&logger, "Spectrum GLInit memory allocation error.\n");
+            spectrum.reset(nullptr);
+            return;
+        }
+        catch(...){
+            lv2_log_error(&logger, "Error initializing Spectrum GL.");
+            spectrum.reset(nullptr);
+            return;
+        }
+        setSpectrum();
+    }
 
     // enable data from the plugin
     if(spectrum) send_ui_enable();
@@ -198,10 +242,15 @@ void SignalViewUI::setupGL(void)
 
 void SignalViewUI::teardownGL(void)
 {
-    // disable data form the plugin
-    if(spectrum) send_ui_disable();
+    if(spectrum){
+        // disable data form the plugin
+        send_ui_disable();
 
-    // destroy the SignalViewGL
+        // Destroy all of the GL elements
+        spectrum->GLDestroy();
+    }
+
+    // destroy the Spectrum
     spectrum.reset(nullptr);
 }
 
@@ -590,6 +639,24 @@ static LV2UI_Handle instantiate(const struct LV2UI_Descriptor *descriptor, const
     }
     catch(...)
     {
+        LV2_Log_Logger logger;
+        LV2_Log_Log*   log = NULL;
+        LV2_URID_Map*  map = NULL;
+        const char* missing = lv2_features_query(
+            features,
+            LV2_URID__map, &map, true,
+            LV2_LOG__log, &log, false,
+            NULL);
+    
+        if (missing) {
+            printf("SignalViewUI instantiate error allocating SignalViewUI.\n");
+            printf("Missing feature <%s>\n", missing);
+            return nullptr;
+        }
+    
+        lv2_log_logger_init(&logger, map, log);
+        lv2_log_error(&logger, "SignalViewUI instanitate error allocaing SignalViewUI.\n");
+    
         return nullptr;
     }
 

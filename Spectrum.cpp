@@ -32,6 +32,7 @@
 #include <cmath>
 #include <cstring>
 #include <iostream>
+#include <new>
 #include <glm/gtx/color_space.hpp>
 
 Spectrum::Spectrum(
@@ -94,6 +95,7 @@ Spectrum::Spectrum(
     
 Spectrum::~Spectrum()
 {
+
 }
 
 void Spectrum::GLInit(void)
