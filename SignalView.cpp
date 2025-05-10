@@ -25,14 +25,21 @@ SignalView::SignalView(
     const char*               bundle_path,
     const LV2_Feature* const* features)
 {
+    LV2_Log_Logger logger;
+    LV2_Log_Log*   logger_log = NULL;
+    map = NULL;
+
     const char* missing = lv2_features_query(
         features,
         LV2_URID__map, &map,        true,
+        LV2_LOG__log,  &logger_log, false,
         NULL);
 
+    lv2_log_logger_init(&logger, map, logger_log);
+
     if (missing) {
-        printf("Missing feature <%s>\n", missing);
-        throw;
+        lv2_log_error(&logger, "SignalView::SignalView missing feature(s):<%s>\n", missing);
+        throw std::exception();
     }
 
     ui_active = false;
@@ -43,7 +50,13 @@ SignalView::SignalView(
     linFreq = rate/2.0f;
     log = false;
 
-    uris.reset(new SignalViewURIs(map));
+    try {
+        uris.reset(new SignalViewURIs(map));
+    }
+    catch(...) {
+        lv2_log_error(&logger, "SignalView::SignalView URIDs allocation error.\n");
+        throw;
+    }
 
     lv2_atom_forge_init(&forge, map);
 }
