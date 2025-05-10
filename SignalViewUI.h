@@ -107,7 +107,7 @@ class SignalViewUI
     ~SignalViewUI();
 
     private:
-    void setupGL(void);
+    PuglStatus setupGL(void);
     void teardownGL(void);
     void onConfigure(int width, int height);
     void onExpose(void);

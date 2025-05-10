@@ -188,12 +188,12 @@ void SignalViewUI::setSpectrum(void)
     }
 }
 
-void SignalViewUI::setupGL(void)
+PuglStatus SignalViewUI::setupGL(void)
 {
     // load glad
     if(!gladLoadGL((GLADloadfunc)&puglGetProcAddress)){
         lv2_log_error(&logger, "SignalViewUI::setupGL gladLoadGL failed.\n");
-        return;
+        return PUGL_REALIZE_FAILED;
     }
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -213,10 +213,12 @@ void SignalViewUI::setupGL(void)
                 bundle_path));
     }
     catch(const std::bad_alloc& e){
-        lv2_log_error(&logger, "Spectrum memory allocation error\n");
+        lv2_log_error(&logger, "SignalViewUI::setupGL Spectrum memory allocation error\n");
+        return PUGL_REALIZE_FAILED;
     }
     catch(...){
-        lv2_log_error(&logger, "Error initializing Spectrum.");
+        lv2_log_error(&logger, "SignalViewUI::setupGL Error initializing Spectrum.");
+        return PUGL_REALIZE_FAILED;
     }
 
     if(spectrum) {
@@ -224,20 +226,22 @@ void SignalViewUI::setupGL(void)
             spectrum->GLInit();
         } 
         catch(const std::bad_alloc& e) {
-            lv2_log_error(&logger, "Spectrum GLInit memory allocation error.\n");
+            lv2_log_error(&logger, "SignalViewUI::setupGL Spectrum GLInit memory allocation error.\n");
             spectrum.reset(nullptr);
-            return;
+            return PUGL_REALIZE_FAILED;
         }
         catch(...){
-            lv2_log_error(&logger, "Error initializing Spectrum GL.");
+            lv2_log_error(&logger, "SignalViewUI::setupGL Error initializing Spectrum GL.");
             spectrum.reset(nullptr);
-            return;
+            return PUGL_REALIZE_FAILED;
         }
         setSpectrum();
     }
 
     // enable data from the plugin
     if(spectrum) send_ui_enable();
+
+    return PUGL_SUCCESS;
 }
 
 void SignalViewUI::teardownGL(void)
@@ -382,7 +386,7 @@ PuglStatus SignalViewUI::onEvent(PuglView* view, const PuglEvent* event)
     {
     case PUGL_REALIZE:
         //printf("PUGL_REALIZE\n");
-        setupGL();
+        return setupGL();
         break;
     case PUGL_UNREALIZE:
         //printf("PUGLE_UNREALIZE\n");
