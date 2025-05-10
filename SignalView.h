@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <memory>
 
 class SignalView
 {
@@ -44,10 +45,10 @@ class SignalView
     LV2_Atom_Sequence*       notify;
 
     // Atom forge and URI mapping
-    LV2_URID_Map*        map;
-    SignalViewURIs*      uris;
-    LV2_Atom_Forge       forge;
-    LV2_Atom_Forge_Frame seq_frame;
+    LV2_URID_Map*                   map;
+    std::unique_ptr<SignalViewURIs> uris;
+    LV2_Atom_Forge                  forge;
+    LV2_Atom_Forge_Frame            seq_frame;
 
     float vec_buffer[32000];
 

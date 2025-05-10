@@ -43,7 +43,8 @@ SignalView::SignalView(
     linFreq = rate/2.0f;
     log = false;
 
-    uris = new SignalViewURIs(map);
+    uris.reset(new SignalViewURIs(map));
+
     lv2_atom_forge_init(&forge, map);
 }
 
