@@ -1,6 +1,6 @@
 # SignalViewLV2
-![SignalView LV2 plugin analysing a sine sweep.](https://github.com/TimKrause2/SignalViewLV2/blob/main/screenshot.png "SignalView analysing speech")
-*SignalView in action analysing a sine sweep.*
+![SignalView LV2 plugin analysing speech with a sine sweep in the right channel.](https://github.com/TimKrause2/SignalViewLV2/blob/main/screenshot.png "SignalView analysing speech")
+*SignalView in action analysing speech with a sine sweep in the right channel.*
 
 ## Description
 
