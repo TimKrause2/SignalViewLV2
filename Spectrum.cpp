@@ -391,7 +391,7 @@ void Spectrum::CoalescePoints(int pix_width)
 void Spectrum::ShadeGraph(std::unique_ptr<float[]> &x_raw, int width_pix, int height_pix)
 {
     float pix_per_sample_x = (float)width_pix/Nfft;
-    float pix_per_unit_y = (float)height_pix/2.0f/3.0f;
+    float pix_per_unit_y = (float)height_pix/2.0f/5.0f;
     float pix_per_sample_x2 = pix_per_sample_x*pix_per_sample_x;
 
     // compute the deltas in pixels
