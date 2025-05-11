@@ -49,6 +49,8 @@ Spectrum::Spectrum(
     bundle_path(bundle_path)
 {
     Npoints = Nfft/2 + 1;
+    Nfft_draw = (Nfft-1)*2 + 1;
+    Ndx_draw = Nfft - 1;
     x_fft.reset(new double[Nfft]);
     X_fft.reset(new std::complex<double>[Npoints]);
     X_db_l.reset(new float[Npoints]);
@@ -65,12 +67,15 @@ Spectrum::Spectrum(
     dataReady = false;
     x_cyclic_in_l.reset(new float[Nfft]);
     x_cyclic_in_r.reset(new float[Nfft]);
-    x_draw_l.reset(new std::unique_ptr<float[]>[2]);
-    x_draw_r.reset(new std::unique_ptr<float[]>[2]);
-    x_draw_l[0].reset(new float[Nfft]);
-    x_draw_l[1].reset(new float[Nfft]);
-    x_draw_r[0].reset(new float[Nfft]);
-    x_draw_r[1].reset(new float[Nfft]);
+    x_draw_l_raw.reset(new std::unique_ptr<float[]>[2]);
+    x_draw_r_raw.reset(new std::unique_ptr<float[]>[2]);
+    x_draw_l_raw[0].reset(new float[Nfft]);
+    x_draw_l_raw[1].reset(new float[Nfft]);
+    x_draw_r_raw[0].reset(new float[Nfft]);
+    x_draw_r_raw[1].reset(new float[Nfft]);
+    dx_draw_raw.reset(new float[Ndx_draw]);
+    x_draw.reset(new float[Nfft_draw]);
+    v_draw.reset(new float[Nfft_draw]);
     x_in_l.reset(new std::unique_ptr<float[]>[Ncopy]);
     x_in_r.reset(new std::unique_ptr<float[]>[Ncopy]);
     for(int c=0;c<Ncopy;c++){
@@ -88,8 +93,8 @@ Spectrum::Spectrum(
     log = false;
     log_last = false;
     for(int i=0;i<Nfft;i++){
-        x_draw_l[i_draw_front][i] = 0.0f;
-        x_draw_r[i_draw_front][i] = 0.0f;
+        x_draw_l_raw[i_draw_front][i] = 0.0f;
+        x_draw_r_raw[i_draw_front][i] = 0.0f;
     }
 }
     
@@ -100,7 +105,7 @@ Spectrum::~Spectrum()
 
 void Spectrum::GLInit(void)
 {
-    tgraph.reset(new LGraph(Nfft));
+    tgraph.reset(new TGraph(Nfft_draw));
     tgraph->SetLineWidths(3.0f, 1.0f);
     tgraph->SetLimits(1.0f, -1.0f);
     
@@ -194,9 +199,14 @@ void Spectrum::Render(void)
 
     glViewport(0, 2*viewport[3]/3, viewport[2], viewport[3]/3);
     tgraph->SetColors(time_color_l0, time_color_l1);
-    tgraph->Draw(x_draw_l[i_draw_front].get(), Nfft);
+    ShadeGraph(x_draw_l_raw[i_draw_front], viewport[2], viewport[3]/3);
+    tgraph->SetValue(v_draw.get(), Nfft_draw);
+    tgraph->Draw(x_draw.get(), Nfft_draw);
+
     tgraph->SetColors(time_color_r0, time_color_r1);
-    tgraph->Draw(x_draw_r[i_draw_front].get(), Nfft);
+    ShadeGraph(x_draw_r_raw[i_draw_front], viewport[2], viewport[3]/3);
+    tgraph->SetValue(v_draw.get(), Nfft_draw);
+    tgraph->Draw(x_draw.get(), Nfft_draw);
     
     glViewport(0, viewport[3]/3, viewport[2], viewport[3]/3);
     grid->Draw();
@@ -254,8 +264,8 @@ void Spectrum::EvaluateSample(float x_l, float x_r)
     {
         i_sample = 0;
         for(int i=0;i<Nfft;i++){
-            x_draw_l[i_draw_back][i] = x_cyclic_in_l[i];
-            x_draw_r[i_draw_back][i] = x_cyclic_in_r[i];
+            x_draw_l_raw[i_draw_back][i] = x_cyclic_in_l[i];
+            x_draw_r_raw[i_draw_back][i] = x_cyclic_in_r[i];
         }
         i_draw_front ^= 1;
         i_draw_back ^= 1;
@@ -376,4 +386,45 @@ void Spectrum::CoalescePoints(int pix_width)
         }
     }
     Npoints_p = i_p;
+}
+
+void Spectrum::ShadeGraph(std::unique_ptr<float[]> &x_raw, int width_pix, int height_pix)
+{
+    float pix_per_sample_x = (float)width_pix/Nfft;
+    float pix_per_unit_y = (float)height_pix/2.0f/3.0f;
+    float pix_per_sample_x2 = pix_per_sample_x*pix_per_sample_x;
+
+    // compute the deltas in pixels
+    for(int i=0;i<Nfft-1;i++){
+        dx_draw_raw[i] = (x_raw[i+1] - x_raw[i])*pix_per_unit_y;
+    }
+
+    // compute the values for the vertices
+    float v_min = 1.0f/10.0f;
+    float v0;
+    int i;
+    for(i=0;i<Nfft-1;i++){
+        x_draw[i*2] = x_raw[i];
+        x_draw[i*2+1] = (x_raw[i]+x_raw[i+1])/2.0f;
+        // compute the length of the line
+        float dy2 = dx_draw_raw[i]*dx_draw_raw[i];
+        float l = sqrtf(pix_per_sample_x2 + dy2);
+        v0 = pix_per_sample_x/l;
+        if(v0<v_min)
+            v0 = v_min;
+        if(i==0){
+            v_draw[i*2] = v0;
+            v_draw[i*2+1] = v0;
+        } else {
+            // check for drawing a tip
+            if(dx_draw_raw[i-1]*dx_draw_raw[i]<0.0){
+                v_draw[i*2] = v0*1.3f;
+            } else {
+                v_draw[i*2] = v0;
+            }
+            v_draw[i*2+1] = v0;
+        }
+    }
+    x_draw[i*2] = x_raw[i];
+    v_draw[i*2] = v0;
 }

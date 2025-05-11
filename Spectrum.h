@@ -34,6 +34,7 @@
 #include <memory>
 #include <iostream>
 #include <deque>
+#include "TGraph.h"
 #include "LGraph.h"
 #include "GraphFill.h"
 #include "Waterfall.h"
@@ -96,6 +97,8 @@ public:
     
 private:
     int Nfft;
+    int Nfft_draw;
+    int Ndx_draw;
     int Npoints;
     int Npoints_p;
     int Ncopy;
@@ -124,8 +127,11 @@ private:
     float frame_rate;
     std::unique_ptr<float[]> x_cyclic_in_l;
     std::unique_ptr<float[]> x_cyclic_in_r;
-    std::unique_ptr<std::unique_ptr<float[]>[]> x_draw_l;
-    std::unique_ptr<std::unique_ptr<float[]>[]> x_draw_r;
+    std::unique_ptr<std::unique_ptr<float[]>[]> x_draw_l_raw;
+    std::unique_ptr<std::unique_ptr<float[]>[]> x_draw_r_raw;
+    std::unique_ptr<float[]> dx_draw_raw;
+    std::unique_ptr<float[]> x_draw;
+    std::unique_ptr<float[]> v_draw;
     std::unique_ptr<std::unique_ptr<float[]>[]> x_in_l;
     std::unique_ptr<std::unique_ptr<float[]>[]> x_in_r;
     std::unique_ptr<double[]> x_fft;
@@ -141,7 +147,7 @@ private:
     PtrFifo ptrFifo;
     
     std::unique_ptr<LGraph> lgraph;
-    std::unique_ptr<LGraph> tgraph;
+    std::unique_ptr<TGraph> tgraph;
     std::unique_ptr<GraphFill> fill;
     std::unique_ptr<Waterfall> waterfall;
     std::unique_ptr<Grid> grid;
@@ -149,6 +155,7 @@ private:
     void ComputeSpectrum(float *x, std::unique_ptr<float[]> &X_db);
     void InitializeFrequency(void);
     void CoalescePoints(int pix_width);
+    void ShadeGraph(std::unique_ptr<float[]> &x_raw, int width_pix, int height_pix);
 };
 
 

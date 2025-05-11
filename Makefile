@@ -26,7 +26,7 @@ SignalView.so: SignalView.o
 SignalView.o: SignalView.cpp SignalView.h uris.h
 
 UI_OBJS= SignalViewUI.o Font.o Grid.o LGraph.o Shader.o Spectrum.o Waterfall.o Semaphore.o \
-	GraphFill.o
+	GraphFill.o TGraph.o
 
 SignalViewUI.so: $(UI_OBJS) $(BUILDDIR)/libpugl.a
 	g++ -Wall -Wextra -shared -fPIC -o SignalViewUI.so  $(UI_OBJS) \
@@ -60,4 +60,6 @@ Waterfall.o: Waterfall.cpp
 Semaphore.o: Semaphore.cpp
 
 GraphFill.o: GraphFill.cpp
+
+TGraph.o: TGraph.cpp
 
