@@ -344,12 +344,6 @@ void Waterfall::InsertLine(float *data_l, float *data_r)
             current_tex = textures[0];
             trailing_tex = textures[1];
         }
-        glClearTexImage(
-            current_tex,
-            0,
-            GL_RG,
-            GL_UNSIGNED_BYTE,
-            NULL);
     }
     for(int i=0;i<Npoints;i++){
         pixels[i].r = dB2intensity(data_l[i]);
