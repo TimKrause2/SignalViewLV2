@@ -28,7 +28,7 @@ command.
     git clone --recurse-submodules https://github.com/TimKrause2/SignalViewLV2.git
 
 
-### Prerequisits
+### Prerequisites
 
 If you need to install a compiler and the `make` command and you are on Ubuntu use the following
 command.
